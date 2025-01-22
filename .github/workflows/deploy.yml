@@ -1,0 +1,32 @@
+name: Syncronise
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  imdb-data:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "0.5.22"
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: "pyproject.toml"
+      - name: Install the project
+        run: uv sync
+      - name: Get latest IMDB data
+        run: uv run imdb-sqlite
+      - name: Run syncronization
+        env:
+          NEO4J_URI: ${{ secrets.NEO4J_URI }}
+          NEO4J_USER: ${{ secrets.NEO4J_USER }}
+          NEO4J_PASSWORD: ${{ secrets.NEO4J_PASSWORD }}
+          SQLITE_DB_PATH: "imdb.db"
+        run: run src/movie-graph sync

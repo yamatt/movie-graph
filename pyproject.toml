@@ -1,0 +1,10 @@
+[project]
+name = "movie-graph"
+version = "0.1.0"
+description = "Adds actors, tv shows, and movies to a graph database"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "imdb-sqlite>=1.1.0",
+    "neo4j>=5.27.0",
+]
