@@ -17,7 +17,6 @@ structlog.configure(
         structlog.stdlib.PositionalArgumentsFormatter(),
         structlog.processors.TimeStamper(fmt="iso"),
         add_run_code,
-        secret_to_secret_string,
         structlog.processors.JSONRenderer(),
     ]
 )
