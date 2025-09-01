@@ -8,7 +8,7 @@ class SQLite:
 
     @cached_property
     def connection(self):
-        return self.sqlite3.connect(self.db_path)
+        return sqlite3.connect(self.db_path)
 
     @cached_property
     def cursor(self):

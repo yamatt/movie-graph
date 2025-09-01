@@ -19,8 +19,8 @@ class Neo4J:
 
     @cached_property
     def driver(self):
-        return GraphDatabase.driver(uri, auth=(user, password))
+        return GraphDatabase.driver(self.uri, auth=(self.user, self.password))
 
     @cached_property
     def session(self):
-        return self.driver.session()
+        return self.driver.session
