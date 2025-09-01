@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
   lint:
@@ -20,7 +21,7 @@ jobs:
       - name: Run linter
         run: uv run black --check --diff src/movie-graph
   convert:
-    name: Download and convert to Neo4j
+    name: Convert
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
