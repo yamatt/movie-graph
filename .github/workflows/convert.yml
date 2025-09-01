@@ -1,6 +1,9 @@
 ---
 name: Convert IMDb data to a graph
-on: push
+on:
+  push:
+    branches:
+      - main
 
 jobs:
   lint:
