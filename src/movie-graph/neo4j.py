@@ -12,10 +12,11 @@ class Neo4J:
         password = os.environ["NEO4J_PASSWORD"]
         return cls(uri, user, password)
 
-    def __init__(self, uri, user, password):
+    def __init__(self, uri, user, password, database_name="neo4j"):
         self.uri = uri
         self.user = user
         self.password = password
+        self.database_name = database_name
 
     @cached_property
     def driver(self):
@@ -23,4 +24,4 @@ class Neo4J:
 
     @cached_property
     def session(self):
-        return self.driver.session
+        return self.driver.session(database=self.database_name)
