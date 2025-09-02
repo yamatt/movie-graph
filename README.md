@@ -6,6 +6,6 @@ Takes IMDb data and turns shows, films and actors in to a queryable graph in Neo
 
 ### Command Line
 
-```sh
+```bash
 NEO4J_PASSWORD=password uv run -m src.movie-graph
 ```
