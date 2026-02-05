@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - "src/**"
+      - "src/movie-graph/**"
       - ".github/workflows/test.yml"
 
 jobs:
