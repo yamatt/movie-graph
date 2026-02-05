@@ -1,0 +1,14 @@
+{
+  "name": "movie-graph",
+  "version": "1.0.0",
+  "description": "Find connections between actors and films using IMDb data",
+  "scripts": {
+    "build": "webpack",
+    "dev": "webpack --watch"
+  },
+  "devDependencies": {
+    "copy-webpack-plugin": "^12.0.2",
+    "webpack": "^5.96.1",
+    "webpack-cli": "^6.0.1"
+  }
+}

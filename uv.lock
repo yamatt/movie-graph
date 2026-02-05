@@ -48,14 +48,14 @@ wheels = [
 
 [[package]]
 name = "imdb-sqlite"
-version = "1.1.0"
+version = "2.0.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "tqdm" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/36/c6/7dd3f2dbe13aea52d12ed2af64c4eabde16886fe8f5b85dd1bbee62fe627/imdb-sqlite-1.1.0.tar.gz", hash = "sha256:86e7cde1c9b53ffce0bec6309a4df4b5d70c59541b14bd831e2189b604439c68", size = 15697 }
+sdist = { url = "https://files.pythonhosted.org/packages/27/67/c1609adade77482df2cde4f578a77bcff249fba54e64c923d148cb52f0f7/imdb_sqlite-2.0.0.tar.gz", hash = "sha256:2df35b750db8d44729e05b135b34cba50b91d2535d25bf60fc93426c820703b8", size = 20898 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/e5/b6/e24af422cf832f1ccbfa0a079d0418ff80d7b8708b3c07950001e680e2b5/imdb_sqlite-1.1.0-py3-none-any.whl", hash = "sha256:12d4906886845db1683c2a7f7cce22b441ffce8b8a8a4c8cea193d1672ff696a", size = 16726 },
+    { url = "https://files.pythonhosted.org/packages/d7/54/f8c38458198dbbc65a0e118154f90122e1829a3e363ac7850cb49a26b4a4/imdb_sqlite-2.0.0-py3-none-any.whl", hash = "sha256:38905f25430a853104c57c2d7e8d790e68da2557fd0d7af6c162ccf82d2cd729", size = 17852 },
 ]
 
 [[package]]
@@ -65,7 +65,6 @@ source = { virtual = "." }
 dependencies = [
     { name = "click" },
     { name = "imdb-sqlite" },
-    { name = "neo4j" },
     { name = "structlog" },
     { name = "tqdm" },
 ]
@@ -79,7 +78,6 @@ dev = [
 requires-dist = [
     { name = "click", specifier = ">=8.2.1" },
     { name = "imdb-sqlite", specifier = ">=1.1.0" },
-    { name = "neo4j", specifier = ">=5.27.0" },
     { name = "structlog", specifier = ">=25.4.0" },
     { name = "tqdm", specifier = ">=4.67.1" },
 ]
@@ -94,18 +92,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/a2/6e/371856a3fb9d31ca8dac321cda606860fa4548858c0cc45d9d1d4ca2628b/mypy_extensions-1.1.0.tar.gz", hash = "sha256:52e68efc3284861e772bbcd66823fde5ae21fd2fdb51c62a211403730b916558", size = 6343 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/79/7b/2c79738432f5c924bef5071f933bcc9efd0473bac3b4aa584a6f7c1c8df8/mypy_extensions-1.1.0-py3-none-any.whl", hash = "sha256:1be4cccdb0f2482337c4743e60421de3a356cd97508abadd57d47403e94f5505", size = 4963 },
-]
-
-[[package]]
-name = "neo4j"
-version = "5.27.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "pytz" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/9c/b6/31ed9f3df8b948aecd31952193b803cd2007551f2f81aaa60d264e8d1950/neo4j-5.27.0.tar.gz", hash = "sha256:f82ee807cd15b178898d83f41a66372e11719a25dd487fd7bea48fd4b7323765", size = 223803 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/f7/9a/cec819e5887804896db67b13215682b15e6f9201d9cf63890fee2b9a29e9/neo4j-5.27.0-py3-none-any.whl", hash = "sha256:929c14b9e5341267324eca170b39d1798b032bffacc26a0529eacaf678ae483f", size = 301679 },
 ]
 
 [[package]]
@@ -133,15 +119,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/23/e8/21db9c9987b0e728855bd57bff6984f67952bea55d6f75e055c46b5383e8/platformdirs-4.4.0.tar.gz", hash = "sha256:ca753cf4d81dc309bc67b0ea38fd15dc97bc30ce419a7f58d13eb3bf14c4febf", size = 21634 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/40/4b/2028861e724d3bd36227adfa20d3fd24c3fc6d52032f4a93c133be5d17ce/platformdirs-4.4.0-py3-none-any.whl", hash = "sha256:abd01743f24e5287cd7a5db3752faf1a2d65353f38ec26d98e25a6db65958c85", size = 18654 },
-]
-
-[[package]]
-name = "pytz"
-version = "2024.2"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/3a/31/3c70bf7603cc2dca0f19bdc53b4537a797747a58875b552c8c413d963a3f/pytz-2024.2.tar.gz", hash = "sha256:2aa355083c50a0f93fa581709deac0c9ad65cca8a9e9beac660adcbd493c798a", size = 319692 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/11/c3/005fcca25ce078d2cc29fd559379817424e94885510568bc1bc53d7d5846/pytz-2024.2-py2.py3-none-any.whl", hash = "sha256:31c7c1817eb7fae7ca4b8c7ee50c72f93aa2dd863de768e1ef4245d426aa0725", size = 508002 },
 ]
 
 [[package]]

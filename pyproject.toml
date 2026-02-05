@@ -1,18 +1,15 @@
 [project]
 name = "movie-graph"
 version = "0.1.0"
-description = "Adds actors, tv shows, and movies to a graph database"
+description = "Creates a compact SQLite database of popular actors, movies, and TV shows from IMDb"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "click>=8.2.1",
     "imdb-sqlite>=1.1.0",
-    "neo4j>=5.27.0",
     "structlog>=25.4.0",
     "tqdm>=4.67.1",
 ]
 
 [dependency-groups]
-dev = [
-    "black>=25.1.0",
-]
+dev = ["black>=25.1.0"]

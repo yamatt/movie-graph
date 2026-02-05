@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movie Graph - Actor & Film Crossover Search</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.js"></script>
+    <script defer src="bundle.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎬 Movie Graph</h1>
+            <p class="subtitle">Find connections between actors and films</p>
+        </header>
+
+        <div class="loading" id="loading">
+            <div class="loading-spinner"></div>
+            <p>Loading IMDb database...</p>
+            <p id="loading-status" style="margin-top: 10px; color: #666;"></p>
+        </div>
+
+        <div class="content" id="content">
+            <div class="stats" id="stats"></div>
+
+            <div class="tabs">
+                <button class="tab active" data-tab="actor-crossover">Find Common Films</button>
+                <button class="tab" data-tab="film-crossover">Find Common Actors</button>
+            </div>
+
+            <div class="query-section active" id="actor-crossover">
+                <h2>Find Films with Two Actors</h2>
+                <form id="actor-form">
+                    <div class="form-group">
+                        <label for="actor1">Actor 1:</label>
+                        <input type="text" id="actor1" name="actor1" placeholder="e.g., Patrick Stewart" required>
+                        <p class="hint">Use partial names like "Stewart" to see suggestions</p>
+                    </div>
+                    <div class="form-group">
+                        <label for="actor2">Actor 2:</label>
+                        <input type="text" id="actor2" name="actor2" placeholder="e.g., Ian McKellen" required>
+                    </div>
+                    <button type="submit">Search</button>
+                </form>
+                <div class="results" id="actor-results"></div>
+            </div>
+
+            <div class="query-section" id="film-crossover">
+                <h2>Find Common Actors Between Films</h2>
+                <form id="film-form">
+                    <div class="form-group">
+                        <label for="film1">Film/Show 1:</label>
+                        <input type="text" id="film1" name="film1" placeholder="e.g., Star Trek" required>
+                        <p class="hint">Use partial titles to see suggestions</p>
+                    </div>
+                    <div class="form-group">
+                        <label for="film2">Film/Show 2:</label>
+                        <input type="text" id="film2" name="film2" placeholder="e.g., Stargate SG-1" required>
+                    </div>
+                    <button type="submit">Search</button>
+                </form>
+                <div class="results" id="film-results"></div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

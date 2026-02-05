@@ -1,0 +1,30 @@
+---
+name: Build Compact IMDb Database
+on:
+  workflow_dispatch:
+  schedule:
+    # Run every Sunday at 2:00 AM UTC
+    - cron: "0 2 * * 0"
+
+jobs:
+  build:
+    name: Build Database
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+      - name: "Set up Python"
+        uses: actions/setup-python@v6
+        with:
+          python-version-file: ".python-version"
+      - name: Install dependencies
+        run: uv sync
+      - name: Build compact database
+        run: uv run -m src.movie-graph
+      - name: Upload compact database
+        uses: actions/upload-artifact@v4
+        with:
+          name: imdb-compact-db
+          path: imdb-compact.db
+          retention-days: 30
