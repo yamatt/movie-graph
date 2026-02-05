@@ -1,5 +1,5 @@
 ---
-name: Build Compact IMDb Database
+name: Build Compact Database
 on:
   workflow_dispatch:
   schedule:

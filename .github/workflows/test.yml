@@ -1,5 +1,5 @@
 ---
-name: Convert IMDb data to a graph
+name: Test Compactor
 on:
   push:
     branches:
