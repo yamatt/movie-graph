@@ -23,7 +23,7 @@ jobs:
       - name: Build compact database
         run: uv run -m src.movie-graph
       - name: Upload compact database
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: imdb-compact-db
           path: imdb-compact.db
