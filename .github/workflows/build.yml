@@ -22,9 +22,11 @@ jobs:
         run: uv sync
       - name: Build compact database
         run: uv run -m src.movie-graph
-      - name: Upload compact database
-        uses: actions/upload-artifact@v6
+      - name: Upload compact database to R2
+        uses: cloudflare/wrangler-action@v3
         with:
-          name: imdb-compact-db
-          path: imdb-compact.db
-          retention-days: 30
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          wranglerVersion: "4"
+          command: |
+            r2 object put --remote "${{ secrets.CLOUDFLARE_R2_BUCKET_NAME }}/imdb-compact.db" --file imdb-compact.db

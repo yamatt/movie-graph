@@ -1,5 +1,7 @@
+import { createDbWorker } from 'sql.js-httpvfs';
+
 let db;
-const DB_URL = 'imdb-compact.db';
+const DB_URL = 'https://pub-d577c0bdf2fd46bfbd7838e1e18b3ad3.r2.dev/imdb-compact.db';
 
 // Type mapping
 const TYPE_MAP = {
@@ -10,49 +12,33 @@ const TYPE_MAP = {
 
 async function loadDatabase() {
     try {
-        document.getElementById('loading-status').textContent = 'Downloading database...';
-
-        const response = await fetch(DB_URL);
-        if (!response.ok) throw new Error('Failed to load database');
-
-        const contentLength = response.headers.get('content-length');
-        const total = parseInt(contentLength, 10);
-        let loaded = 0;
-
-        const reader = response.body.getReader();
-        const chunks = [];
-
-        while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-
-            chunks.push(value);
-            loaded += value.length;
-
-            if (total) {
-                const progress = Math.round((loaded / total) * 100);
-                document.getElementById('loading-status').textContent =
-                    `Downloading: ${progress}% (${(loaded / 1024 / 1024).toFixed(1)} MB / ${(total / 1024 / 1024).toFixed(1)} MB)`;
-            }
-        }
-
-        const totalLength = chunks.reduce((acc, chunk) => acc + chunk.length, 0);
-        const buffer = new Uint8Array(totalLength);
-        let offset = 0;
-        for (const chunk of chunks) {
-            buffer.set(chunk, offset);
-            offset += chunk.length;
-        }
-
         document.getElementById('loading-status').textContent = 'Initializing database...';
 
-        const SQL = await window.initSqlJs({
-            locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/${file}`
-        });
+        const workerUrl = new URL(
+            'sql.js-httpvfs/dist/sqlite.worker.js',
+            import.meta.url
+        );
+        const wasmUrl = new URL(
+            'sql.js-httpvfs/dist/sql-wasm.wasm',
+            import.meta.url
+        );
 
-        db = new SQL.Database(buffer);
+        db = await createDbWorker(
+            [
+                {
+                    from: "inline",
+                    config: {
+                        serverMode: "full",
+                        url: DB_URL,
+                        requestChunkSize: 4096,
+                    }
+                }
+            ],
+            workerUrl.toString(),
+            wasmUrl.toString()
+        );
 
-        showStats();
+        await showStats();
         document.getElementById('loading').style.display = 'none';
         document.getElementById('content').classList.add('loaded');
     } catch (error) {
@@ -62,23 +48,23 @@ async function loadDatabase() {
     }
 }
 
-function showStats() {
-    const titles = db.exec('SELECT COUNT(*) FROM titles')[0].values[0][0];
-    const people = db.exec('SELECT COUNT(*) FROM people')[0].values[0][0];
-    const crew = db.exec('SELECT COUNT(*) FROM crew')[0].values[0][0];
+async function showStats() {
+    const titles = await db.db.query('SELECT COUNT(*) as count FROM titles');
+    const people = await db.db.query('SELECT COUNT(*) as count FROM people');
+    const crew = await db.db.query('SELECT COUNT(*) as count FROM crew');
 
     document.getElementById('stats').innerHTML = `
         <div class="stats-grid">
             <div class="stat-item">
-                <div class="stat-value">${titles.toLocaleString()}</div>
+                <div class="stat-value">${titles[0].count.toLocaleString()}</div>
                 <div class="stat-label">Titles</div>
             </div>
             <div class="stat-item">
-                <div class="stat-value">${people.toLocaleString()}</div>
+                <div class="stat-value">${people[0].count.toLocaleString()}</div>
                 <div class="stat-label">People</div>
             </div>
             <div class="stat-item">
-                <div class="stat-value">${crew.toLocaleString()}</div>
+                <div class="stat-value">${crew[0].count.toLocaleString()}</div>
                 <div class="stat-label">Crew Credits</div>
             </div>
         </div>
@@ -122,22 +108,22 @@ document.getElementById('actor-form').addEventListener('submit', async (e) => {
             ORDER BY t.premiered DESC
         `;
 
-        const result = db.exec(query);
+        const result = await db.db.query(query);
 
-        if (!result.length || !result[0].values.length) {
+        if (!result.length) {
             resultsDiv.innerHTML = '<div class="no-results">No common titles found. Try partial names or check spelling.</div>';
             return;
         }
 
         const html = `
-            <h3>Found ${result[0].values.length} title(s):</h3>
-            ${result[0].values.map(([id, title, type, premiered]) => `
+            <h3>Found ${result.length} title(s):</h3>
+            ${result.map(row => `
                 <div class="result-item">
-                    <div class="result-title">${title}</div>
+                    <div class="result-title">${row.original_title}</div>
                     <div class="result-meta">
-                        ${TYPE_MAP[type] || 'Unknown'}
-                        ${premiered ? `• ${premiered}` : ''}
-                        • <a href="https://www.imdb.com/title/${id}/" target="_blank">View on IMDb</a>
+                        ${TYPE_MAP[row.type] || 'Unknown'}
+                        ${row.premiered ? `• ${row.premiered}` : ''}
+                        • <a href="https://www.imdb.com/title/${row.title_id}/" target="_blank">View on IMDb</a>
                     </div>
                 </div>
             `).join('')}
@@ -173,21 +159,21 @@ document.getElementById('film-form').addEventListener('submit', async (e) => {
             ORDER BY p.name
         `;
 
-        const result = db.exec(query);
+        const result = await db.db.query(query);
 
-        if (!result.length || !result[0].values.length) {
+        if (!result.length) {
             resultsDiv.innerHTML = '<div class="no-results">No common actors found. Try partial titles or check spelling.</div>';
             return;
         }
 
         const html = `
-            <h3>Found ${result[0].values.length} person(s):</h3>
-            ${result[0].values.map(([id, name, category]) => `
+            <h3>Found ${result.length} person(s):</h3>
+            ${result.map(row => `
                 <div class="result-item">
-                    <div class="result-title">${name}</div>
+                    <div class="result-title">${row.name}</div>
                     <div class="result-meta">
-                        ${category.charAt(0).toUpperCase() + category.slice(1)}
-                        • <a href="https://www.imdb.com/name/${id}/" target="_blank">View on IMDb</a>
+                        ${row.category.charAt(0).toUpperCase() + row.category.slice(1)}
+                        • <a href="https://www.imdb.com/name/${row.person_id}/" target="_blank">View on IMDb</a>
                     </div>
                 </div>
             `).join('')}

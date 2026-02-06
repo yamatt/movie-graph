@@ -14,7 +14,7 @@ from .stats import report_stats
 class CompactDatabase:
     """Creates a compact SQLite database with filtered IMDb data."""
 
-    def __init__(self, source_db_path, target_db_path, min_votes=40000):
+    def __init__(self, source_db_path, target_db_path, min_votes=5000):
         self.source_db_path = source_db_path
         self.target_db_path = target_db_path
         self.min_votes = min_votes
@@ -54,6 +54,9 @@ class CompactDatabase:
     def _create_schema(self, conn):
         """Create the target database schema."""
         log.info("creating_schema")
+        # Optimize for HTTP VFS (sql.js-httpvfs)
+        conn.execute("PRAGMA journal_mode = DELETE")
+        conn.execute("PRAGMA page_size = 4096")  # Match requestChunkSize
         conn.executescript(SCHEMA_SQL)
         conn.commit()
 
@@ -82,7 +85,12 @@ class CompactDatabase:
         rows = cursor.fetchall()
         log.info("copying_titles", count=len(rows))
 
-        for row in tqdm(rows, desc="Copying titles"):
+        for row in tqdm(
+            rows,
+            desc="Copying titles",
+            mininterval=0,
+            miniters=max(1, len(rows) // 100),
+        ):
             title_id, original_title, type_str, premiered = row
             type_int = TYPE_MAP.get(type_str, 1)  # Default to movie if unknown
             target_conn.execute(
@@ -110,7 +118,13 @@ class CompactDatabase:
         all_people = []
         people_ids_seen = set()
 
-        for i in tqdm(range(0, len(title_ids), batch_size), desc="Finding people"):
+        num_batches = (len(title_ids) + batch_size - 1) // batch_size
+        for i in tqdm(
+            range(0, len(title_ids), batch_size),
+            desc="Finding people",
+            mininterval=0,
+            miniters=max(1, num_batches // 100),
+        ):
             batch = title_ids[i : i + batch_size]
             placeholders = ",".join("?" * len(batch))
 
@@ -135,7 +149,12 @@ class CompactDatabase:
             VALUES (?, ?)
         """
 
-        for row in tqdm(all_people, desc="Copying people"):
+        for row in tqdm(
+            all_people,
+            desc="Copying people",
+            mininterval=0,
+            miniters=max(1, len(all_people) // 100),
+        ):
             target_conn.execute(insert_query, row)
 
         target_conn.commit()
@@ -163,7 +182,13 @@ class CompactDatabase:
         total_copied = 0
         seen_combinations = set()  # Track unique (title_id, person_id, category) tuples
 
-        for i in tqdm(range(0, len(title_ids), batch_size), desc="Copying crew"):
+        num_batches = (len(title_ids) + batch_size - 1) // batch_size
+        for i in tqdm(
+            range(0, len(title_ids), batch_size),
+            desc="Copying crew",
+            mininterval=0,
+            miniters=max(1, num_batches // 100),
+        ):
             title_batch = title_ids[i : i + batch_size]
             title_placeholders = ",".join("?" * len(title_batch))
 
@@ -208,6 +233,13 @@ class CompactDatabase:
         """Copy crew from TV episodes without adding the episodes themselves."""
         log.info("copying_episode_crew")
 
+        has_episodes = source_conn.execute(
+            "SELECT 1 FROM sqlite_master WHERE type='table' AND name='episodes'"
+        ).fetchone()
+        if not has_episodes:
+            log.info("episodes_table_missing")
+            return
+
         # Get TV series IDs from target
         tv_series = target_conn.execute(
             "SELECT title_id FROM titles WHERE type IN (2, 3)"
@@ -223,8 +255,12 @@ class CompactDatabase:
         seen = set()
 
         # Find all episode crew for these TV series
+        num_batches = (len(tv_series_ids) + batch_size - 1) // batch_size
         for i in tqdm(
-            range(0, len(tv_series_ids), batch_size), desc="Finding episode crew"
+            range(0, len(tv_series_ids), batch_size),
+            desc="Finding episode crew",
+            mininterval=0,
+            miniters=max(1, num_batches // 100),
         ):
             batch = tv_series_ids[i : i + batch_size]
             placeholders = ",".join("?" * len(batch))
@@ -270,9 +306,12 @@ class CompactDatabase:
             new_people_list = list(new_people)
             people_data = []
 
+            num_batches = (len(new_people_list) + batch_size - 1) // batch_size
             for i in tqdm(
                 range(0, len(new_people_list), batch_size),
                 desc="Fetching episode people",
+                mininterval=0,
+                miniters=max(1, num_batches // 100),
             ):
                 batch = new_people_list[i : i + batch_size]
                 placeholders = ",".join("?" * len(batch))
@@ -283,7 +322,12 @@ class CompactDatabase:
 
             log.info("adding_episode_people", count=len(people_data))
             insert_query = "INSERT INTO people (person_id, name) VALUES (?, ?)"
-            for row in tqdm(people_data, desc="Copying episode people"):
+            for row in tqdm(
+                people_data,
+                desc="Copying episode people",
+                mininterval=0,
+                miniters=max(1, len(people_data) // 100),
+            ):
                 target_conn.execute(insert_query, row)
 
             existing_people.update(new_people)
@@ -303,7 +347,10 @@ class CompactDatabase:
         added_count = 0
 
         for show_id, person_id, category in tqdm(
-            all_crew_from_episodes, desc="Adding episode crew"
+            all_crew_from_episodes,
+            desc="Adding episode crew",
+            mininterval=0,
+            miniters=max(1, len(all_crew_from_episodes) // 100),
         ):
             # Only add if person exists in our database
             if person_id in existing_people:
@@ -327,8 +374,9 @@ class CompactDatabase:
         conn.commit()
 
     def _vacuum(self, conn):
-        """Optimize database size."""
+        """Optimize database for size and HTTP VFS access."""
         log.info("optimizing_database")
         conn.execute("ANALYZE")
-        conn.execute("VACUUM")
+        conn.execute("VACUUM")  # Reorganizes database with new page_size
         conn.commit()
+        log.info("database_optimized_for_http_vfs")

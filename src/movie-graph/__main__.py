@@ -29,9 +29,9 @@ import os
 )
 @click.option(
     "--min-votes",
-    default=40000,
+    default=5000,
     type=int,
-    help="Minimum number of votes for titles to be included (default: 40000)",
+    help="Minimum number of votes for titles to be included (default: 5000)",
 )
 def build(source_db, target_db, cache_dir, skip_download, min_votes):
     """Build a compact IMDb database with only popular titles and actors."""
@@ -46,8 +46,8 @@ def build(source_db, target_db, cache_dir, skip_download, min_votes):
             os.remove(source_db)
 
         # Use imdb-sqlite to download only the tables we need
-        # Tables: titles, ratings, people, crew (principals)
-        # Note: No AKAs (rely on fuzzy matching) or episodes (too much data)
+        # Tables: titles, ratings, people, crew (principals), episodes
+        # Note: No AKAs (rely on fuzzy matching)
         cmd = [
             "imdb-sqlite",
             "--db",
@@ -55,7 +55,7 @@ def build(source_db, target_db, cache_dir, skip_download, min_votes):
             "--cache-dir",
             cache_dir,
             "--only",
-            "titles,ratings,people,crew",
+            "titles,ratings,people,crew,episodes",
         ]
 
         log.info("running_imdb_sqlite", command=" ".join(cmd))
