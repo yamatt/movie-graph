@@ -39,6 +39,7 @@ async function loadDatabase() {
         );
 
         await showStats();
+        initAutocomplete();
         document.getElementById('loading').style.display = 'none';
         document.getElementById('content').classList.add('loaded');
     } catch (error) {
@@ -69,6 +70,203 @@ async function showStats() {
             </div>
         </div>
     `;
+}
+
+function debounce(fn, wait) {
+    let timeout;
+    return (...args) => {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => fn(...args), wait);
+    };
+}
+
+function setupAutocomplete({
+    inputId,
+    minChars,
+    fetchSuggestions,
+    renderSuggestion,
+    onSelect
+}) {
+    const input = document.getElementById(inputId);
+    if (!input) {
+        return;
+    }
+
+    const list = document.createElement('div');
+    list.className = 'autocomplete-list';
+    list.style.display = 'none';
+    input.parentNode.appendChild(list);
+
+    let activeIndex = -1;
+    let items = [];
+
+    const closeList = () => {
+        list.style.display = 'none';
+        list.innerHTML = '';
+        activeIndex = -1;
+        items = [];
+    };
+
+    const openList = () => {
+        if (items.length) {
+            list.style.display = 'block';
+        }
+    };
+
+    const renderList = (suggestions) => {
+        items = suggestions;
+        list.innerHTML = '';
+        activeIndex = -1;
+        if (!suggestions.length) {
+            closeList();
+            return;
+        }
+
+        suggestions.forEach((suggestion, index) => {
+            const item = document.createElement('div');
+            item.className = 'autocomplete-item';
+            item.innerHTML = renderSuggestion(suggestion);
+            item.addEventListener('mousedown', (event) => {
+                event.preventDefault();
+                onSelect(suggestion);
+                closeList();
+            });
+            item.addEventListener('mousemove', () => {
+                const previous = list.querySelector('.autocomplete-item.active');
+                if (previous) {
+                    previous.classList.remove('active');
+                }
+                activeIndex = index;
+                item.classList.add('active');
+            });
+            list.appendChild(item);
+        });
+
+        openList();
+    };
+
+    const updateSuggestions = debounce(async () => {
+        const term = input.value.trim();
+        if (term.length < minChars) {
+            closeList();
+            return;
+        }
+
+        try {
+            const suggestions = await fetchSuggestions(term);
+            renderList(suggestions);
+        } catch (error) {
+            console.error('Autocomplete error:', error);
+            closeList();
+        }
+    }, 200);
+
+    input.addEventListener('input', updateSuggestions);
+    input.addEventListener('focus', updateSuggestions);
+    input.addEventListener('blur', () => {
+        setTimeout(closeList, 150);
+    });
+    input.addEventListener('keydown', (event) => {
+        if (!items.length || list.style.display === 'none') {
+            return;
+        }
+
+        if (event.key === 'ArrowDown') {
+            event.preventDefault();
+            activeIndex = (activeIndex + 1) % items.length;
+        } else if (event.key === 'ArrowUp') {
+            event.preventDefault();
+            activeIndex = (activeIndex - 1 + items.length) % items.length;
+        } else if (event.key === 'Enter') {
+            if (activeIndex >= 0) {
+                event.preventDefault();
+                onSelect(items[activeIndex]);
+                closeList();
+            }
+            return;
+        } else if (event.key === 'Escape') {
+            closeList();
+            return;
+        } else {
+            return;
+        }
+
+        const previous = list.querySelector('.autocomplete-item.active');
+        if (previous) {
+            previous.classList.remove('active');
+        }
+        const next = list.children[activeIndex];
+        if (next) {
+            next.classList.add('active');
+            next.scrollIntoView({ block: 'nearest' });
+        }
+    });
+}
+
+function initAutocomplete() {
+    setupAutocomplete({
+        inputId: 'actor1',
+        minChars: 2,
+        fetchSuggestions: (term) =>
+            db.db.query(
+                'SELECT name FROM people WHERE name LIKE ? ORDER BY name LIMIT 8',
+                [`%${term}%`]
+            ),
+        renderSuggestion: (row) => `${row.name}`,
+        onSelect: (row) => {
+            document.getElementById('actor1').value = row.name;
+        }
+    });
+
+    setupAutocomplete({
+        inputId: 'actor2',
+        minChars: 2,
+        fetchSuggestions: (term) =>
+            db.db.query(
+                'SELECT name FROM people WHERE name LIKE ? ORDER BY name LIMIT 8',
+                [`%${term}%`]
+            ),
+        renderSuggestion: (row) => `${row.name}`,
+        onSelect: (row) => {
+            document.getElementById('actor2').value = row.name;
+        }
+    });
+
+    setupAutocomplete({
+        inputId: 'film1',
+        minChars: 2,
+        fetchSuggestions: (term) =>
+            db.db.query(
+                'SELECT original_title, premiered, type FROM titles WHERE original_title LIKE ? ORDER BY premiered DESC LIMIT 8',
+                [`%${term}%`]
+            ),
+        renderSuggestion: (row) => {
+            const year = row.premiered ? ` (${row.premiered})` : '';
+            const type = TYPE_MAP[row.type] ? ` • ${TYPE_MAP[row.type]}` : '';
+            return `${row.original_title}<div class="autocomplete-meta">${year}${type}</div>`;
+        },
+        onSelect: (row) => {
+            document.getElementById('film1').value = row.original_title;
+        }
+    });
+
+    setupAutocomplete({
+        inputId: 'film2',
+        minChars: 2,
+        fetchSuggestions: (term) =>
+            db.db.query(
+                'SELECT original_title, premiered, type FROM titles WHERE original_title LIKE ? ORDER BY premiered DESC LIMIT 8',
+                [`%${term}%`]
+            ),
+        renderSuggestion: (row) => {
+            const year = row.premiered ? ` (${row.premiered})` : '';
+            const type = TYPE_MAP[row.type] ? ` • ${TYPE_MAP[row.type]}` : '';
+            return `${row.original_title}<div class="autocomplete-meta">${year}${type}</div>`;
+        },
+        onSelect: (row) => {
+            document.getElementById('film2').value = row.original_title;
+        }
+    });
 }
 
 // Tab switching

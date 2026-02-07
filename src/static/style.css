@@ -105,6 +105,7 @@ h1 {
 
 .form-group {
     margin-bottom: 20px;
+    position: relative;
 }
 
 label {
@@ -126,6 +127,41 @@ input[type="text"] {
 input[type="text"]:focus {
     outline: none;
     border-color: #667eea;
+}
+
+.autocomplete-list {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    z-index: 10;
+    max-height: 240px;
+    overflow-y: auto;
+}
+
+.autocomplete-item {
+    padding: 10px 12px;
+    cursor: pointer;
+    border-bottom: 1px solid #f0f0f0;
+    color: #333;
+}
+
+.autocomplete-item:last-child {
+    border-bottom: none;
+}
+
+.autocomplete-item:hover,
+.autocomplete-item.active {
+    background: #f2f5ff;
+}
+
+.autocomplete-meta {
+    color: #666;
+    font-size: 0.85em;
 }
 
 button[type="submit"] {
