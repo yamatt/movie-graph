@@ -291,7 +291,7 @@ function initAutocomplete() {
         minChars: 2,
         fetchSuggestions: async (term) => {
             const rows = await db.db.query(
-                'SELECT original_title, premiered, type FROM titles WHERE original_title LIKE ? LIMIT 50',
+                'SELECT title_id, original_title, premiered, type FROM titles WHERE original_title LIKE ? LIMIT 50',
                 [`%${term}%`]
             );
             return sortSuggestions(rows, term).slice(0, 8);
@@ -302,7 +302,9 @@ function initAutocomplete() {
             return `${row.original_title}<div class="autocomplete-meta">${year}${type}</div>`;
         },
         onSelect: (row) => {
-            document.getElementById('film1').value = row.original_title;
+            const input = document.getElementById('film1');
+            input.value = row.original_title;
+            input.dataset.titleId = row.title_id;
         }
     });
 
@@ -311,7 +313,7 @@ function initAutocomplete() {
         minChars: 2,
         fetchSuggestions: async (term) => {
             const rows = await db.db.query(
-                'SELECT original_title, premiered, type FROM titles WHERE original_title LIKE ? LIMIT 50',
+                'SELECT title_id, original_title, premiered, type FROM titles WHERE original_title LIKE ? LIMIT 50',
                 [`%${term}%`]
             );
             return sortSuggestions(rows, term).slice(0, 8);
@@ -322,8 +324,17 @@ function initAutocomplete() {
             return `${row.original_title}<div class="autocomplete-meta">${year}${type}</div>`;
         },
         onSelect: (row) => {
-            document.getElementById('film2').value = row.original_title;
+            const input = document.getElementById('film2');
+            input.value = row.original_title;
+            input.dataset.titleId = row.title_id;
         }
+    });
+
+    document.getElementById('film1').addEventListener('input', (event) => {
+        event.currentTarget.dataset.titleId = '';
+    });
+    document.getElementById('film2').addEventListener('input', (event) => {
+        event.currentTarget.dataset.titleId = '';
     });
 }
 
@@ -350,21 +361,26 @@ document.getElementById('actor-form').addEventListener('submit', async (e) => {
 
     resultsDiv.innerHTML = '<p>Searching...</p>';
 
-    try {
-        const query = `
-            SELECT DISTINCT t.title_id, t.original_title, t.type, t.premiered
-            FROM titles t
-            JOIN crew c1 ON t.title_id = c1.title_id
-            JOIN people p1 ON c1.person_id = p1.person_id
-            JOIN crew c2 ON t.title_id = c2.title_id
-            JOIN people p2 ON c2.person_id = p2.person_id
-            WHERE p1.name LIKE '%${actor1}%'
-              AND p2.name LIKE '%${actor2}%'
-              AND p1.person_id != p2.person_id
-            ORDER BY t.premiered DESC
-        `;
+    if (actor1.length < 2 || actor2.length < 2) {
+        resultsDiv.innerHTML = '<div class="no-results">Please enter at least 2 characters for both actors.</div>';
+        return;
+    }
 
-        const result = await db.db.query(query);
+    try {
+                const query = `
+                        SELECT DISTINCT t.title_id, t.original_title, t.type, t.premiered
+                        FROM titles t
+                        JOIN crew c1 ON t.title_id = c1.title_id
+                        JOIN people p1 ON c1.person_id = p1.person_id
+                        JOIN crew c2 ON t.title_id = c2.title_id
+                        JOIN people p2 ON c2.person_id = p2.person_id
+                        WHERE p1.name LIKE ?
+                            AND p2.name LIKE ?
+                            AND p1.person_id != p2.person_id
+                        ORDER BY t.premiered DESC
+                `;
+
+                const result = await db.db.query(query, [`%${actor1}%`, `%${actor2}%`]);
 
         if (!result.length) {
             resultsDiv.innerHTML = '<div class="no-results">No common titles found. Try partial names or check spelling.</div>';
@@ -395,27 +411,55 @@ document.getElementById('actor-form').addEventListener('submit', async (e) => {
 document.getElementById('film-form').addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    const film1 = document.getElementById('film1').value.trim();
-    const film2 = document.getElementById('film2').value.trim();
+    const film1Input = document.getElementById('film1');
+    const film2Input = document.getElementById('film2');
+    const film1 = film1Input.value.trim();
+    const film2 = film2Input.value.trim();
+    const film1Id = film1Input.dataset.titleId?.trim();
+    const film2Id = film2Input.dataset.titleId?.trim();
     const resultsDiv = document.getElementById('film-results');
 
     resultsDiv.innerHTML = '<p>Searching...</p>';
 
+    if (film1.length < 2 || film2.length < 2) {
+        resultsDiv.innerHTML = '<div class="no-results">Please enter at least 2 characters for both titles.</div>';
+        return;
+    }
+
     try {
-        const query = `
+        const queryById = `
             SELECT DISTINCT p.person_id, p.name, c1.category
             FROM people p
             JOIN crew c1 ON p.person_id = c1.person_id
             JOIN titles t1 ON c1.title_id = t1.title_id
             JOIN crew c2 ON p.person_id = c2.person_id
             JOIN titles t2 ON c2.title_id = t2.title_id
-            WHERE t1.original_title LIKE '%${film1}%'
-              AND t2.original_title LIKE '%${film2}%'
+            WHERE t1.title_id = ?
+              AND t2.title_id = ?
               AND t1.title_id != t2.title_id
+              AND c1.category IN ('actor', 'actress')
+              AND c2.category IN ('actor', 'actress')
             ORDER BY p.name
         `;
 
-        const result = await db.db.query(query);
+        const queryByTitle = `
+            SELECT DISTINCT p.person_id, p.name, c1.category
+            FROM people p
+            JOIN crew c1 ON p.person_id = c1.person_id
+            JOIN titles t1 ON c1.title_id = t1.title_id
+            JOIN crew c2 ON p.person_id = c2.person_id
+            JOIN titles t2 ON c2.title_id = t2.title_id
+            WHERE t1.original_title LIKE ?
+              AND t2.original_title LIKE ?
+              AND t1.title_id != t2.title_id
+              AND c1.category IN ('actor', 'actress')
+              AND c2.category IN ('actor', 'actress')
+            ORDER BY p.name
+        `;
+
+        const result = (film1Id && film2Id)
+            ? await db.db.query(queryById, [film1Id, film2Id])
+            : await db.db.query(queryByTitle, [`%${film1}%`, `%${film2}%`]);
 
         if (!result.length) {
             resultsDiv.innerHTML = '<div class="no-results">No common actors found. Try partial titles or check spelling.</div>';
