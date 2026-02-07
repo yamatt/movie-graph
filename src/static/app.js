@@ -259,14 +259,16 @@ function initAutocomplete() {
         minChars: 2,
         fetchSuggestions: async (term) => {
             const rows = await db.db.query(
-                'SELECT name FROM people WHERE name LIKE ? LIMIT 50',
+                'SELECT person_id, name FROM people WHERE name LIKE ? LIMIT 50',
                 [`%${term}%`]
             );
             return sortSuggestions(rows, term).slice(0, 8);
         },
         renderSuggestion: (row) => `${row.name}`,
         onSelect: (row) => {
-            document.getElementById('actor1').value = row.name;
+            const input = document.getElementById('actor1');
+            input.value = row.name;
+            input.dataset.personId = row.person_id;
         }
     });
 
@@ -275,14 +277,16 @@ function initAutocomplete() {
         minChars: 2,
         fetchSuggestions: async (term) => {
             const rows = await db.db.query(
-                'SELECT name FROM people WHERE name LIKE ? LIMIT 50',
+                'SELECT person_id, name FROM people WHERE name LIKE ? LIMIT 50',
                 [`%${term}%`]
             );
             return sortSuggestions(rows, term).slice(0, 8);
         },
         renderSuggestion: (row) => `${row.name}`,
         onSelect: (row) => {
-            document.getElementById('actor2').value = row.name;
+            const input = document.getElementById('actor2');
+            input.value = row.name;
+            input.dataset.personId = row.person_id;
         }
     });
 
@@ -336,6 +340,12 @@ function initAutocomplete() {
     document.getElementById('film2').addEventListener('input', (event) => {
         event.currentTarget.dataset.titleId = '';
     });
+    document.getElementById('actor1').addEventListener('input', (event) => {
+        event.currentTarget.dataset.personId = '';
+    });
+    document.getElementById('actor2').addEventListener('input', (event) => {
+        event.currentTarget.dataset.personId = '';
+    });
 }
 
 // Tab switching
@@ -357,6 +367,8 @@ document.getElementById('actor-form').addEventListener('submit', async (e) => {
 
     const actor1 = document.getElementById('actor1').value.trim();
     const actor2 = document.getElementById('actor2').value.trim();
+    const actor1Id = document.getElementById('actor1').dataset.personId?.trim();
+    const actor2Id = document.getElementById('actor2').dataset.personId?.trim();
     const resultsDiv = document.getElementById('actor-results');
 
     resultsDiv.innerHTML = '<p>Searching...</p>';
@@ -367,7 +379,20 @@ document.getElementById('actor-form').addEventListener('submit', async (e) => {
     }
 
     try {
-                const query = `
+                const queryById = `
+                        SELECT DISTINCT t.title_id, t.original_title, t.type, t.premiered
+                        FROM titles t
+                        JOIN crew c1 ON t.title_id = c1.title_id
+                        JOIN people p1 ON c1.person_id = p1.person_id
+                        JOIN crew c2 ON t.title_id = c2.title_id
+                        JOIN people p2 ON c2.person_id = p2.person_id
+                        WHERE p1.person_id = ?
+                            AND p2.person_id = ?
+                            AND p1.person_id != p2.person_id
+                        ORDER BY t.premiered DESC
+                `;
+
+                const queryByName = `
                         SELECT DISTINCT t.title_id, t.original_title, t.type, t.premiered
                         FROM titles t
                         JOIN crew c1 ON t.title_id = c1.title_id
@@ -380,7 +405,9 @@ document.getElementById('actor-form').addEventListener('submit', async (e) => {
                         ORDER BY t.premiered DESC
                 `;
 
-                const result = await db.db.query(query, [`%${actor1}%`, `%${actor2}%`]);
+                const result = (actor1Id && actor2Id)
+                        ? await db.db.query(queryById, [actor1Id, actor2Id])
+                        : await db.db.query(queryByName, [`%${actor1}%`, `%${actor2}%`]);
 
         if (!result.length) {
             resultsDiv.innerHTML = '<div class="no-results">No common titles found. Try partial names or check spelling.</div>';
