@@ -23,6 +23,9 @@ uv run -m src.movie-graph
 
 # Custom vote threshold
 uv run -m src.movie-graph --min-votes 60000
+
+# Rebuild compact database without re-downloading IMDb data
+uv run -m src.movie-graph --skip-download
 ```
 
 ### Web Application

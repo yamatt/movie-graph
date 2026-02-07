@@ -56,7 +56,7 @@ class CompactDatabase:
         log.info("creating_schema")
         # Optimize for HTTP VFS (sql.js-httpvfs)
         conn.execute("PRAGMA journal_mode = DELETE")
-        conn.execute("PRAGMA page_size = 4096")  # Match requestChunkSize
+        conn.execute("PRAGMA page_size = 32768")  # 32KB pages for fewer HTTP requests
         conn.executescript(SCHEMA_SQL)
         conn.commit()
 

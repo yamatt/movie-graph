@@ -3,7 +3,6 @@ Database schema definitions for the compact IMDb database.
 """
 
 SCHEMA_SQL = """
-    PRAGMA page_size = 4096;
     PRAGMA auto_vacuum = FULL;
     PRAGMA journal_mode = DELETE;
 

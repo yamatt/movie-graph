@@ -30,7 +30,7 @@ async function loadDatabase() {
                     config: {
                         serverMode: "full",
                         url: DB_URL,
-                        requestChunkSize: 4096,
+                        requestChunkSize: 1024 * 1024, // 1MB chunks
                     }
                 }
             ],
