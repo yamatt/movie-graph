@@ -203,15 +203,67 @@ function setupAutocomplete({
     });
 }
 
+function scoreMatch(value, term) {
+    const text = value.toLowerCase();
+    const query = term.toLowerCase();
+
+    if (!query) {
+        return 0;
+    }
+    if (text === query) {
+        return 1000;
+    }
+    if (text.startsWith(query)) {
+        return 900 - text.length;
+    }
+
+    const wordIndex = text.split(/\s+/).findIndex(word => word.startsWith(query));
+    if (wordIndex >= 0) {
+        return 800 - wordIndex;
+    }
+
+    const pos = text.indexOf(query);
+    if (pos >= 0) {
+        return 700 - pos;
+    }
+
+    let lastIndex = -1;
+    let streak = 0;
+    let score = 0;
+    for (const char of query) {
+        const idx = text.indexOf(char, lastIndex + 1);
+        if (idx === -1) {
+            return 0;
+        }
+        streak = idx === lastIndex + 1 ? streak + 1 : 1;
+        score += 10 + streak * 2;
+        lastIndex = idx;
+    }
+
+    return score;
+}
+
+function sortSuggestions(rows, term) {
+    return rows
+        .map(row => ({
+            ...row,
+            _score: scoreMatch(row.name || row.original_title || '', term)
+        }))
+        .filter(row => row._score > 0)
+        .sort((a, b) => b._score - a._score);
+}
+
 function initAutocomplete() {
     setupAutocomplete({
         inputId: 'actor1',
         minChars: 2,
-        fetchSuggestions: (term) =>
-            db.db.query(
-                'SELECT name FROM people WHERE name LIKE ? ORDER BY name LIMIT 8',
+        fetchSuggestions: async (term) => {
+            const rows = await db.db.query(
+                'SELECT name FROM people WHERE name LIKE ? LIMIT 50',
                 [`%${term}%`]
-            ),
+            );
+            return sortSuggestions(rows, term).slice(0, 8);
+        },
         renderSuggestion: (row) => `${row.name}`,
         onSelect: (row) => {
             document.getElementById('actor1').value = row.name;
@@ -221,11 +273,13 @@ function initAutocomplete() {
     setupAutocomplete({
         inputId: 'actor2',
         minChars: 2,
-        fetchSuggestions: (term) =>
-            db.db.query(
-                'SELECT name FROM people WHERE name LIKE ? ORDER BY name LIMIT 8',
+        fetchSuggestions: async (term) => {
+            const rows = await db.db.query(
+                'SELECT name FROM people WHERE name LIKE ? LIMIT 50',
                 [`%${term}%`]
-            ),
+            );
+            return sortSuggestions(rows, term).slice(0, 8);
+        },
         renderSuggestion: (row) => `${row.name}`,
         onSelect: (row) => {
             document.getElementById('actor2').value = row.name;
@@ -235,11 +289,13 @@ function initAutocomplete() {
     setupAutocomplete({
         inputId: 'film1',
         minChars: 2,
-        fetchSuggestions: (term) =>
-            db.db.query(
-                'SELECT original_title, premiered, type FROM titles WHERE original_title LIKE ? ORDER BY premiered DESC LIMIT 8',
+        fetchSuggestions: async (term) => {
+            const rows = await db.db.query(
+                'SELECT original_title, premiered, type FROM titles WHERE original_title LIKE ? LIMIT 50',
                 [`%${term}%`]
-            ),
+            );
+            return sortSuggestions(rows, term).slice(0, 8);
+        },
         renderSuggestion: (row) => {
             const year = row.premiered ? ` (${row.premiered})` : '';
             const type = TYPE_MAP[row.type] ? ` • ${TYPE_MAP[row.type]}` : '';
@@ -253,11 +309,13 @@ function initAutocomplete() {
     setupAutocomplete({
         inputId: 'film2',
         minChars: 2,
-        fetchSuggestions: (term) =>
-            db.db.query(
-                'SELECT original_title, premiered, type FROM titles WHERE original_title LIKE ? ORDER BY premiered DESC LIMIT 8',
+        fetchSuggestions: async (term) => {
+            const rows = await db.db.query(
+                'SELECT original_title, premiered, type FROM titles WHERE original_title LIKE ? LIMIT 50',
                 [`%${term}%`]
-            ),
+            );
+            return sortSuggestions(rows, term).slice(0, 8);
+        },
         renderSuggestion: (row) => {
             const year = row.premiered ? ` (${row.premiered})` : '';
             const type = TYPE_MAP[row.type] ? ` • ${TYPE_MAP[row.type]}` : '';
