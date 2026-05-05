@@ -9,6 +9,11 @@ on:
       - ".github/workflows/pages.yml"
       - "package.json"
       - "package-lock.json"
+  workflow_run:
+    workflows:
+      - Auto-merge
+    types:
+      - completed
 
 # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:
