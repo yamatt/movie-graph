@@ -23,7 +23,7 @@ jobs:
       - name: Build compact database
         run: uv run -m src.movie-graph
       - name: Upload compact database to R2
-        uses: cloudflare/wrangler-action@v3
+        uses: cloudflare/wrangler-action@v3.15.0
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
