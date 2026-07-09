@@ -9,7 +9,7 @@
   "devDependencies": {
     "copy-webpack-plugin": "^14.0.0",
     "webpack": "^5.108.0",
-    "webpack-cli": "^7.0.3"
+    "webpack-cli": "^7.1.0"
   },
   "dependencies": {
     "sql.js-httpvfs": "^0.8.12"
